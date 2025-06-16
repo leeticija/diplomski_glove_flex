@@ -1,18 +1,18 @@
-# Diplomski rad - Glove Flex Control
+# Diplomski rad - Kontrola fleksije rukavice i grippera
 
-Ovaj projekt implementira sistem za mjerenje i kontrolu fleksije prstiju pomoću senzora pomaka (displacement sensors) integriranih u rukavicu (glove). Podaci sa senzora se obrađuju kroz kombinovani median i eksponencijalni pomični prosjek (EMA) za filtriranje šuma i otklanjanje izuzetaka (outliera).
+Ovaj projekt implementira sustav za mjerenje i kontrolu pokreta prstiju pomoću senzora pomaka ugrađenih u rukavicu (glove). Podaci sa senzora obrađuju se kombinacijom medijanskog i eksponencijalnog pokretnog prosjeka (EMA) radi uklanjanja šuma i iznimaka (outliera).
 
-U radu će biti implementirano pomicanje grippera upravljano senzorima na rukavici, pri čemu gripper također ima svoj vlastiti senzor za povratnu informaciju.
+U radu će biti implementirano upravljanje pomicanjem grippera koristeći podatke sa senzora na rukavici, dok gripper također ima vlastiti senzor za povratnu informaciju.
 
-Podaci se zatim šalju putem ROS (Robot Operating System) čvora u obliku poruka za dalju analizu i upotrebu u robotskoj kontroli ili drugim aplikacijama.
+Podaci se prenose putem ROS (Robot Operating System) čvora kao poruke za daljnju obradu i kontrolu u robotskim sustavima.
 
-## Ključne karakteristike:
-- Integracija SparkFun displacement senzora sa mikrokontrolerom
-- Filtracija signala korištenjem kombinovanog median i EMA filtera
-- Upravljanje pomicanjem grippera na temelju senzora rukavice i povratnih podataka sa senzora grippera
-- ROS publisher za slanje obrađenih podataka u realnom vremenu
-- Efikasno upravljanje memorijom za rad na ograničenim uređajima poput Arduino platforme
+## Ključne značajke:
+- Integracija SparkFun senzora pomaka sa mikrokontrolerom
+- Filtracija signala kombiniranim medijanskim i EMA filtrom
+- Upravljanje gripperom na temelju senzora rukavice i senzora grippera
+- ROS publisher za slanje obrađenih podataka u stvarnom vremenu
+- Efikasno upravljanje memorijom za rad na ograničenim uređajima poput Arduina
 
 ---
 
-Projekt je dio diplomskog rada i služi kao osnova za razvoj sistema za preciznu detekciju pokreta prstiju i kontrolu grippera u robotskoj ili medicinskoj primjeni.
+Projekt je dio diplomskog rada i predstavlja osnovu za razvoj sustava precizne detekcije pokreta prstiju i kontrole grippera u robotskim ili medicinskim primjenama.
