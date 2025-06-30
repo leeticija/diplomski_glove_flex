@@ -40,4 +40,4 @@ def plot_multiple_rosbag_topics(bag_path, topic_list):
 
 # plot_multiple_rosbag_topics("median.bag", ["/glove_data", "/glove_data_median"])
 # plot_multiple_rosbag_topics("median10.bag", ["/glove_data", "/glove_data_median"])
-plot_multiple_rosbag_topics("omeaaaa.bag", ["/glove_data", "/glove_data_ome"])
+# plot_multiple_rosbag_topics("omeaaaa.bag", ["/glove_data", "/glove_data_ome"])
