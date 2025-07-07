@@ -6,11 +6,11 @@ from dynamixel_workbench_msgs.msg import DynamixelStateList
 
 # sensor: gripper open - 855, closed - 829
 # glove open (up) - 855, close (down) - 829
-CLOSE_POSITION = 950
+CLOSE_POSITION = 790
 OPEN_POSITION = 1226
 GOAL_TOLERANCE = 2 # gripper given goal position tolerance
-VELOCITY = 150
-DEADBAND = 4
+VELOCITY = 15
+DEADBAND = 1
 
 class GloveGripperController:
 
@@ -19,79 +19,49 @@ class GloveGripperController:
         rospy.Subscriber("/glove_data_ome", Float32, self.glove_sensor_callback, queue_size=1)
         rospy.Subscriber("/gripper_data_ome", Float32, self.gripper_sensor_callback, queue_size=1)
         rospy.Subscriber('/dynamixel_workbench/dynamixel_state', DynamixelStateList, self.dynamixel_state_callback, queue_size=1)
-        
+
         self.dynamixel_command_service = rospy.ServiceProxy('/dynamixel_workbench/dynamixel_command', DynamixelCommand)
         self.dynamixel_command_service.wait_for_service(timeout=2.0)
         self.dynamixel_command_vel(VELOCITY)
         self.dynamixel_current_position = None
-        self.is_moving = False
-        self.goal_position = None
-        rospy.loginfo("Glove Gripper Controller started!")
 
+        print("potrebno pomaknuti motor za: ", (1226-950)/(855-829), "za promjenu od 1 stupnja savijenosti.") # tolko se mora pomaknuti za promjenu od 1 stupnja savijanja.
+        self.moving_constant = (855-829)/(1226-950) # za koliko se senzor promijeni ako motor pomaknem za 1.
+        self.goal_position = None
         self.glove_reading = None
         self.gripper_reading = None
 
-        self.previous = 0
-        self.counter = 0
+        timer = rospy.Timer(rospy.Duration(0.1), self.refresh_gripper_state)
+    
+    def refresh_gripper_state(self, event):
+        # print("GlOVE: ", self.glove_reading)
+        # print("GRIPPER: ", self.gripper_reading)
+        diff = abs(self.glove_reading - self.gripper_reading)
+        print("diff: ", diff)
+        print("current gripper position: ", self.dynamixel_current_position)
+
+        if (self.glove_reading < self.gripper_reading) and self.dynamixel_current_position - 0.5*(diff/self.moving_constant) > CLOSE_POSITION:
+            print("closing! velocitiy sped up for ", 10*diff, "%")
+            self.dynamixel_command_vel(int(VELOCITY*0.1*diff))
+            self.dynamixel_command_pos(int(self.dynamixel_current_position - 0.5*(diff/self.moving_constant)))
+        elif self.glove_reading < self.gripper_reading:
+            print("cannot!, wanted: ", int(self.dynamixel_current_position - (diff/self.moving_constant)), "max closed: ", CLOSE_POSITION)
+        if (self.glove_reading > self.gripper_reading) and self.dynamixel_current_position + 0.5*(diff/self.moving_constant) < OPEN_POSITION:
+            print("opening! velocitiy sped up for ", 10*diff, "%")
+            self.dynamixel_command_vel(int(VELOCITY*0.1*diff))
+            self.dynamixel_command_pos(int(self.dynamixel_current_position + 0.5*(diff/self.moving_constant)))
+        elif self.glove_reading > self.gripper_reading:
+            print("cannot!, wanted: ", int(self.dynamixel_current_position + (diff/self.moving_constant)), "max opened: ", OPEN_POSITION)
 
     def glove_sensor_callback(self, msg):
 
         self.glove_reading = msg.data
-
-        if self.gripper_reading is None or self.dynamixel_current_position is None:
-            return
-
-        diff = self.glove_reading - self.gripper_reading
-        
-        if abs(diff) < DEADBAND:
-            print("Tocno!!!!")
-            return
-
-        if diff < 0:
-            if(self.is_moving):
-                print("dynamixel moving, not sending commands!")
-                print(self.dynamixel_current_position, "wanted:", self.goal_position)
-                return
-            print("NEtocno! Zatvaram...")
-            print(self.glove_reading, " ", self.gripper_reading)
-            new_pos = max(self.dynamixel_current_position - 4, CLOSE_POSITION)
-            self.dynamixel_command_pos(new_pos)
-        if diff > 0:
-            if(self.is_moving):
-                print("dynamixel moving, not sending commands!")
-                print(self.dynamixel_current_position, "wanted:", self.goal_position)
-                return
-            print("NEtocno! Otvaram...")
-            print(self.glove_reading, " ", self.gripper_reading)
-            new_pos = min(self.dynamixel_current_position + 4, OPEN_POSITION)
-            self.dynamixel_command_pos(new_pos)
 
     def gripper_sensor_callback(self, msg):
         self.gripper_reading = msg.data
 
     def dynamixel_state_callback(self, msg):
         self.dynamixel_current_position = msg.dynamixel_state[0].present_position
-
-        if self.is_moving and self.goal_position is not None:
-            # check if current position is close to goal
-            if abs(self.dynamixel_current_position - self.goal_position) <= GOAL_TOLERANCE:
-                rospy.loginfo("Dynamixel reached goal position.")
-                self.is_moving = False
-                self.goal_position = None
-                self.counter = 0
-                return
-                # ako 5 puta za redom je ista razlika, onda samo kazemo da je uspio doci:
-            if abs(self.dynamixel_current_position - self.goal_position) == self.previous:
-                self.counter = self.counter + 1
-            self.previous = abs(self.dynamixel_current_position - self.goal_position)
-
-            if self.counter > 5:
-                print("Vise od 5 puta se nije maknuo! Gotov je.")
-                self.counter = 0
-                self.is_moving = False
-                self.goal_position = None
-
-                
 
     def dynamixel_command_vel(self, new_speed):
         try:
@@ -109,9 +79,7 @@ class GloveGripperController:
         try:
             response = self.dynamixel_command_service('', 1, 'Goal_Position', new_position)
             if response.comm_result:
-                self.goal_position = new_position
-                self.is_moving = True 
-                pass
+                ...
             else:
                 rospy.logwarn("Failed to set position.")
         except rospy.ServiceException as e:
