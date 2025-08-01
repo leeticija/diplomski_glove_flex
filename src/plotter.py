@@ -41,4 +41,4 @@ def plot_multiple_rosbag_topics(bag_path, topic_list):
 # plot_multiple_rosbag_topics("median.bag", ["/glove_data", "/glove_data_median"])
 # plot_multiple_rosbag_topics("median10.bag", ["/glove_data", "/glove_data_median"])
 # plot_multiple_rosbag_topics("omeaaaa.bag", ["/glove_data", "/glove_data_ome"])
-plot_multiple_rosbag_topics("../bags/2025-06-30-18-41-22.bag", ["/glove_data_ome", "/gripper_data_ome"])
+plot_multiple_rosbag_topics("../bags/slow_close_gripper_data.bag", ["/gripper_data_ome"])
