@@ -12,7 +12,7 @@ class SimulatedMotor:
         rospy.Subscriber("/sim_motor/set_velocity", StampedFloat32, self.set_velocity_callback)
 
         # Motor state
-        self.current_position = 850.0  # starting position
+        self.current_position = 830+(1470-790)/2 # starting position
         # self.target_position = 850.0
         self.velocity = 0.0
         self.last_update_time = rospy.get_time()
@@ -23,7 +23,7 @@ class SimulatedMotor:
         self.velocity_cmd = None
         #self.command_queue_time = None
 
-        rospy.Timer(rospy.Duration(0.05), self.update) # sluzi za publishanje motor state-a. Mora biti brzi nego sto zahtjevi dolaze (svakih 0.01 s).
+        rospy.Timer(rospy.Duration(0.01), self.update) # sluzi za publishanje motor state-a. Mora biti brzi nego sto zahtjevi dolaze (svakih 0.01 s).
 
     # za requestanje promjene pozicije motora!
     def set_position_callback(self, msg):

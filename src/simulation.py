@@ -9,15 +9,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # PID constants
-KP = 0.3
+KP = 0.5
 KI = 0.5
-KD = 0.2
+KD = 0.4
 DT = 0.01
 
 CLOSE_POSITION = 790
 OPEN_POSITION = 1470
 GOAL_TOLERANCE = 2 # gripper goal position tolerance
-VELOCITY = 10
+VELOCITY = 30
 DEADBAND = 1
 
 class PID():
@@ -55,7 +55,7 @@ class SimulatedCascadedControllerNode():
         rospy.Subscriber('/sim_motor/state', Float32, self.dynamixel_state_callback)
         self.pid = PID(KP, KI, KD)
         self.dynamixel_current_position = None
-        self.dt = 0.1
+        self.dt = 0.01
 
         self.glove_sensor_data_generator = self.simulate_glove_time_series()
         rospy.Timer(rospy.Duration(self.dt), self.control_loop)
@@ -134,33 +134,75 @@ class SimulatedCascadedControllerNode():
         # error directly affects speed:
         #new_speed = error * VELOCITY
 
+    # def simulate_glove_time_series(self):
+    #     duration = 3.0  # seconds
+    #     dt = 0.01       # sampling interval (10 ms)
+    #     t = np.arange(0, duration, dt)  # time vector
+
+    #     # Sensor value range
+    #     min_val = 830
+    #     max_val = 870
+    #     amplitude = (max_val - min_val) / 2
+    #     offset = (max_val + min_val) / 2
+
+    #     # Frequency: 1 full wave over 3 seconds
+    #     frequency = 1 / duration  # ≈ 0.333 Hz
+
+    #     # Sinusoidal signal
+    #     sensor_values = offset + amplitude * np.sin(2 * np.pi * frequency * t)
+
+    #     # Plot it
+    #     # plt.plot(t, sensor_values)
+    #     # plt.title("Simulated Flex Sensor Sinusoidal Data")
+    #     # plt.xlabel("Time (s)")
+    #     # plt.ylabel("Sensor Reading")
+    #     # plt.grid(True)
+    #     # plt.show()
+
+    #     for i in range(len(t)):
+    #         yield t[i], sensor_values[i]
+
     def simulate_glove_time_series(self):
-        duration = 3.0  # seconds
-        dt = 0.01       # sampling interval (10 ms)
-        t = np.arange(0, duration, dt)  # time vector
 
-        # Sensor value range
-        min_val = 830
-        max_val = 870
-        amplitude = (max_val - min_val) / 2
-        offset = (max_val + min_val) / 2
+        dt = 0.01  # time step in seconds
 
-        # Frequency: 1 full wave over 3 seconds
-        frequency = 1 / duration  # ≈ 0.333 Hz
+        # Phase durations
+        t1 = 1.0  # hold at 850
+        t2 = 2.0  # rise to 860
+        t3 = 1.0  # hold at 860
+        t4 = 1.0  # fall to 835 (parabolically)
+        t5 = 1.0  # hold at 835
 
-        # Sinusoidal signal
-        sensor_values = offset + amplitude * np.sin(2 * np.pi * frequency * t)
+        # Phase 1: Hold at 850
+        t_phase1 = np.arange(0, t1, dt)
+        v_phase1 = np.full_like(t_phase1, 850.0)
 
-        # Plot it
-        # plt.plot(t, sensor_values)
-        # plt.title("Simulated Flex Sensor Sinusoidal Data")
-        # plt.xlabel("Time (s)")
-        # plt.ylabel("Sensor Reading")
-        # plt.grid(True)
-        # plt.show()
+        # Phase 2: Linear rise to 860
+        t_phase2 = np.arange(t1, t1 + t2, dt)
+        v_phase2 = np.linspace(850, 860, len(t_phase2))
 
-        for i in range(len(t)):
-            yield t[i], sensor_values[i]
+        # Phase 3: Hold at 860
+        t_phase3 = np.arange(t1 + t2, t1 + t2 + t3, dt)
+        v_phase3 = np.full_like(t_phase3, 860.0)
+
+        # Phase 4: Parabolic fall to 835
+        t_phase4 = np.arange(t1 + t2 + t3, t1 + t2 + t3 + t4, dt)
+        # Use a downward parabola from 860 to 835
+        normalized_time = np.linspace(0, 1, len(t_phase4))
+        v_phase4 = 860 - 25 * (normalized_time ** 2)  # 860 → 835
+
+        # Phase 5: Hold at 835
+        t_phase5 = np.arange(t1 + t2 + t3 + t4, t1 + t2 + t3 + t4 + t5, dt)
+        v_phase5 = np.full_like(t_phase5, 835.0)
+
+        # Combine all phases
+        t_all = np.concatenate([t_phase1, t_phase2, t_phase3, t_phase4, t_phase5])
+        v_all = np.concatenate([v_phase1, v_phase2, v_phase3, v_phase4, v_phase5])
+
+        # Yield time and value as a generator
+        for ti, vi in zip(t_all, v_all):
+            yield ti, vi
+
 
     def error_sum_fitness(self, glove_data_series):
         ...
